@@ -1,12 +1,73 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import React, { Component } from 'react';
+import ReactDOM from "react-dom";
+import "./assets/style.css";
 
-ReactDOM.render(<App />, document.getElementById('root'));
+import quizService from './quizService/index';
+import QuestionBox from './components/QuestionBox';
+import Result from './components/Result';
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+class QuizBee extends Component{
+    state = {
+        questionBank: [],
+        score: 0,
+        response: 0
+    };
+
+    getQuestions = () => {
+        quizService().then(question => {
+            this.setState({
+                questionBank: question
+            })
+        });
+    }
+
+    computeAnswer = (answer, correctAnswer) => {
+        if(answer === correctAnswer){
+            this.setState({
+                score: this.state.score + 1
+            });
+        }
+
+        this.setState({
+            response: this.state.response < 5 ? this.state.response + 1 : 5
+        })
+    }
+    playAgain = () => {
+        this.getQuestions();
+        this.setState({
+            score: 0,
+            response: 0
+        });
+    }
+    componentDidMount(){
+        this.getQuestions();
+    }
+
+    render(){
+        return (
+            <div className="container">
+                <div className="row">
+                    <div className="col-sm-12">
+                        <div className="page-header text-center">
+                            <h1>Quiz</h1>
+                        </div>
+                    </div>
+                    <div className="col-sm-12">
+                        {this.state.questionBank.length > 0 && this.state.response < 5 && this.state.questionBank.map(({question, answers, correct, questionID}) => (
+                            <QuestionBox question={question} options={answers} key={questionID}
+                            selected={answer => this.computeAnswer(answer, correct)}
+                            />
+                        ))}
+
+                        {this.state.response === 5 ? (<Result score={this.state.score} playAgain={this.playAgain}/>) : null}
+                    </div>                    
+                </div>
+            </div>
+        );
+    }
+}
+
+ReactDOM.render(
+    <QuizBee />,
+    document.getElementById('root')
+);
